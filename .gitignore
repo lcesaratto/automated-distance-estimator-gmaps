@@ -1,0 +1,7 @@
+.vscode
+my_env
+all_entries.csv
+chromedriver.exe
+*.xlsx
+
+!Sample.xlsx
