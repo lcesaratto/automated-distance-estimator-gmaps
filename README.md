@@ -11,4 +11,5 @@ Steps:
 python -m venv my_env
 pip install -r requirements.txt
 Download chromedriver.exe from https://chromedriver.chromium.org/
-Add chromedriver.exe to path
+Add chromedriver.exe to directory
+pyinstaller --add-data "chromedriver.exe;." --onefile --windowed rechner.py

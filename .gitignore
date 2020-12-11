@@ -5,3 +5,8 @@ chromedriver.exe
 *.xlsx
 
 !Sample.xlsx
+
+dist
+build
+__pycache__
+rechner.spec
