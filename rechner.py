@@ -11,9 +11,9 @@ import re
 import os
 
 def save_new_entry(df_row):  
-    df_all = pd.read_csv("all_entries.csv")
+    df_all = pd.read_csv(resource_path('./all_entries.csv'))
     df_all = df_all.append(df_row[['von Str.','von Ort','von PLZ','nach Str.','nach Ort','nach PLZ','Kilometer']],ignore_index=True)
-    df_all.to_csv("all_entries.csv",index=False)
+    df_all.to_csv(resource_path('./all_entries.csv'),index=False)
 
 def convert_kms(kms):
     unit = re.sub('[^a-z]','',kms)
@@ -24,7 +24,7 @@ def convert_kms(kms):
     return kms
 
 def estimate_kilometers(row,travel_mode):
-    df_all = pd.read_csv("all_entries.csv")
+    df_all = pd.read_csv(resource_path('./all_entries.csv'))
 
     value = df_all.loc[(df_all["von Str."] == row["von Str."]) & (df_all["nach Str."] == row["nach Str."])]["Kilometer"]
     
@@ -43,7 +43,7 @@ def estimate_kilometers(row,travel_mode):
         options = Options()
         options.add_argument("--lang=de")
         options.add_argument("--headless")
-        driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(executable_path=resource_path('./chromedriver.exe'),options=options)
         # driver.minimize_window()
         driver.get(url)
         # wait = WebDriverWait(driver, 10)
@@ -91,9 +91,9 @@ def calculate_daily_sum(df):
     return df
 
 def check_entries_df():
-    if not os.path.isfile('all_entries.csv'):
+    if not os.path.isfile(resource_path('./all_entries.csv')):
         newDF = pd.DataFrame(columns=['von Str.','von Ort','von PLZ','nach Str.','nach Ort','nach PLZ','Kilometer'])
-        newDF.to_csv('all_entries.csv',index=False)
+        newDF.to_csv(resource_path('./all_entries.csv'),index=False)
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -107,12 +107,20 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+def clean_df(df):
+    df['Kilometer ges./Tag'] = float('NaN')
+    df = df[['Datum','von Str.','von Ort','von PLZ','nach Str.','nach Ort','nach PLZ','Kilometer','Kilometer ges./Tag']]
+    if df['Datum'][df.last_valid_index()] == 'SUMME':
+        df = df.iloc[0:df.last_valid_index()]
+    return df
+
 if __name__ == '__main__':
     check_entries_df()
     with open(resource_path('./parameters.txt')) as file:
         parameters = [line.rstrip('\n') for line in file]
     # Prepare data and extract kms
-    df = pd.read_excel(parameters[0])
+    df = pd.read_excel(resource_path('./'+parameters[0]))
+    df = clean_df(df)
     df.fillna('', inplace=True)
     df = df.astype({'Datum': 'str','von Str.': 'str','von Ort': 'str','von PLZ': 'str',
                 'nach Str.': 'str','nach Ort': 'str','nach PLZ': 'str'})
@@ -124,4 +132,4 @@ if __name__ == '__main__':
     df_sum = pd.DataFrame.from_dict({'Datum':'SUMME','Kilometer':[df['Kilometer'].sum(axis=0)],'Kilometer ges./Tag':[df['Kilometer'].sum(axis=0)]})
     df = df.append(df_sum,ignore_index=True)
     # Save to Excel
-    df.to_excel(parameters[0],index=False)
+    df.to_excel(resource_path('./'+parameters[0]),index=False)
